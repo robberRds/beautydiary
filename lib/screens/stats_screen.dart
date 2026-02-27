@@ -35,7 +35,7 @@ class _StatsScreenState extends State<StatsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Statistics')),
+      appBar: AppBar(title: const Text('Фінансова статистика')),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -47,9 +47,9 @@ class _StatsScreenState extends State<StatsScreen> {
                   range = picked;
                   await _load();
                 }
-              }, child: const Text('Pick range')),
+              }, child: const Text('Вибрати період')),
               const SizedBox(width: 12),
-              Text('Total: ${total.toStringAsFixed(2)}')
+              Text('Доходи: ${total.toStringAsFixed(2)}')
             ]),
             const SizedBox(height: 20),
             Expanded(child: _buildChart())

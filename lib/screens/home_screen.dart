@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import '../services/db_service.dart';
 import '../services/export_service.dart';
 import '../models/appointment.dart';
-import '../services/export_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -44,11 +43,27 @@ class _HomeScreenState extends State<HomeScreen> {
     return events[d] ?? [];
   }
 
+  Future<void> _seedSampleData() async {
+    final db = DBService();
+    final now = DateTime.now();
+    final samples = <Appointment>[
+      Appointment(clientName: 'Anna', dateTime: DateTime(now.year, now.month, now.day, 10, 0), phone: '0991112233', price: 400.0, note: 'Classic manicure'),
+      Appointment(clientName: 'Oksana', dateTime: DateTime(now.year, now.month, now.day, 12, 0), phone: '0992223344', price: 500.0, note: 'Gel polish'),
+      Appointment(clientName: 'Ira', dateTime: DateTime(now.year, now.month, now.day + 1, 9, 30), phone: '0993334455', price: 350.0, note: 'Manicure + design'),
+      Appointment(clientName: 'Lena', dateTime: DateTime(now.year, now.month, now.day + 2, 14, 0), phone: '0994445566', price: 450.0, note: 'Shellac'),
+    ];
+    for (final s in samples) {
+      await db.insertAppointment(s);
+    }
+    await _loadForMonth(_focused);
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sample data inserted')));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Beauty Diary'),
+        title: const Text('Щоденник майстра'),
         actions: [
           IconButton(
               onPressed: () => Navigator.pushNamed(context, '/stats'),
@@ -66,11 +81,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 final all = await DBService().allAppointments();
                 final path = await ExportService().exportAppointmentsToExcel(all);
                 if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Excel saved: $path')));
+              } else if (v == 'seed') {
+                await _seedSampleData();
               }
             },
             itemBuilder: (c) => [
-              const PopupMenuItem(value: 'pdf', child: Text('Export PDF')),
-              const PopupMenuItem(value: 'xlsx', child: Text('Export Excel')),
+              const PopupMenuItem(value: 'pdf', child: Text('Експортувати PDF')),
+              const PopupMenuItem(value: 'xlsx', child: Text('Експортувати Excel')),
+              const PopupMenuDivider(),
+              const PopupMenuItem(value: 'seed', child: Text('Додати приклади даних')),
             ],
           )
         ],
@@ -93,19 +112,22 @@ class _HomeScreenState extends State<HomeScreen> {
               _focused = focused;
               await _loadForMonth(focused);
             },
+            eventLoader: (day) => _eventsForDay(day),
             calendarBuilders: CalendarBuilders(
               markerBuilder: (context, date, eventsList) {
                 final count = _eventsForDay(date).length;
                 if (count == 0) return const SizedBox.shrink();
-                return Positioned(
-                  bottom: 6,
+                return Align(
+                  alignment: Alignment.bottomCenter,
                   child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                        color: Colors.red, shape: BoxShape.circle),
+                    margin: const EdgeInsets.only(bottom: 4),
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                    alignment: Alignment.center,
                     child: Text(
                       '$count',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ),
                 );

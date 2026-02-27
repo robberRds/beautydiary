@@ -26,35 +26,34 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
     final arg = ModalRoute.of(context)!.settings.arguments;
     if (arg is DateTime) {
       _dt = DateTime(arg.year, arg.month, arg.day, _dt.hour, _dt.minute);
-    } else if (arg is Map && arg['appointment'] != null) {
-      final a = arg['appointment'] as dynamic;
-      if (a is! DateTime) {
-        try {
-          final ap = a as Object;
-        } catch (_) {}
-      }
-    } else if (arg != null && arg is Object) {
-      // support passing Appointment directly
-      try {
-        final ap = arg as dynamic;
-        if (ap.clientName != null && ap.dateTime != null) {
-          _editingId = ap.id as int?;
-          _nameCtl.text = ap.clientName as String;
-          _phoneCtl.text = (ap.phone ?? '') as String;
-          _priceCtl.text = ap.price == null ? '' : ap.price.toString();
-          _noteCtl.text = (ap.note ?? '') as String;
-          _dt = ap.dateTime as DateTime;
-        }
-      } catch (_) {}
+    } else if (arg is Appointment) {
+      final a = arg as Appointment;
+      _editingId = a.id;
+      _nameCtl.text = a.clientName;
+      _phoneCtl.text = a.phone ?? '';
+      _priceCtl.text = a.price?.toString() ?? '';
+      _noteCtl.text = a.note ?? '';
+      _dt = a.dateTime;
     }
+  }
+
+  @override
+  void dispose() {
+    _nameCtl.dispose();
+    _phoneCtl.dispose();
+    _priceCtl.dispose();
+    _noteCtl.dispose();
+    super.dispose();
   }
 
   Future<void> _pickDateTime() async {
     final date = await showDatePicker(
-        context: context,
-        initialDate: _dt,
-        firstDate: DateTime(2000),
-        lastDate: DateTime(2100));
+      context: context,
+      initialDate: _dt,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      locale: const Locale('uk'),
+    );
     if (date == null) return;
     final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_dt));
     if (time == null) return;
@@ -70,32 +69,42 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
     final db = DBService();
     final conflict = await db.hasConflict(_dt, minInterval, ignoreId: _editingId);
     if (conflict) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Conflict with existing appointment')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Конфлікт з існуючим записом')));
       return;
     }
     final price = _priceCtl.text.isEmpty ? null : double.tryParse(_priceCtl.text);
-    final a = Appointment(id: _editingId, clientName: _nameCtl.text, dateTime: _dt, phone: _phoneCtl.text.isEmpty ? null : _phoneCtl.text, price: price, note: _noteCtl.text.isEmpty ? null : _noteCtl.text);
+    final a = Appointment(id: _editingId, clientName: _nameCtl.text.trim(), dateTime: _dt, phone: _phoneCtl.text.isEmpty ? null : _phoneCtl.text.trim(), price: price, note: _noteCtl.text.isEmpty ? null : _noteCtl.text.trim());
     if (_editingId == null) {
       await db.insertAppointment(a);
     } else {
       await db.updateAppointment(a);
     }
-    Navigator.of(context).pop();
+    if (mounted) Navigator.of(context).pop();
   }
 
   Future<void> _delete() async {
     if (_editingId == null) return;
-    final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(title: const Text('Delete'), content: const Text('Delete this appointment?'), actions: [TextButton(onPressed: () => Navigator.of(c).pop(false), child: const Text('No')), TextButton(onPressed: () => Navigator.of(c).pop(true), child: const Text('Yes'))]));
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Видалити'),
+        content: const Text('Видалити цей запис?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(c).pop(false), child: const Text('Ні')),
+          TextButton(onPressed: () => Navigator.of(c).pop(true), child: const Text('Так')),
+        ],
+      ),
+    );
     if (ok == true) {
       await DBService().deleteAppointment(_editingId!);
-      Navigator.of(context).pop();
+      if (mounted) Navigator.of(context).pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_editingId == null ? 'New Appointment' : 'Edit Appointment'), actions: _editingId != null ? [IconButton(onPressed: _delete, icon: const Icon(Icons.delete))] : null),
+      appBar: AppBar(title: Text(_editingId == null ? 'Новий запис' : 'Редагувати запис'), actions: _editingId != null ? [IconButton(onPressed: _delete, icon: const Icon(Icons.delete))] : null),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Form(
@@ -104,19 +113,19 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
             children: [
               TextFormField(
                 controller: _nameCtl,
-                decoration: const InputDecoration(labelText: 'Client name'),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                decoration: const InputDecoration(labelText: 'Імʼя клієнта'),
+                validator: (v) => v == null || v.trim().isEmpty ? 'Обовʼязково' : null,
               ),
               const SizedBox(height: 8),
               Row(children: [
-                Expanded(child: Text('Time: ${DateFormat.yMMMd().add_Hm().format(_dt)}')),
-                TextButton(onPressed: _pickDateTime, child: const Text('Change'))
+                Expanded(child: Text('Час: ${DateFormat.yMMMd().add_Hm().format(_dt)}')),
+                TextButton(onPressed: _pickDateTime, child: const Text('Змінити'))
               ]),
-              TextFormField(controller: _phoneCtl, decoration: const InputDecoration(labelText: 'Phone (optional)')),
-              TextFormField(controller: _priceCtl, decoration: const InputDecoration(labelText: 'Price (optional)'), keyboardType: TextInputType.number),
-              TextFormField(controller: _noteCtl, decoration: const InputDecoration(labelText: 'Note (optional)')),
+              TextFormField(controller: _phoneCtl, decoration: const InputDecoration(labelText: 'Телефон (необовʼязково)')),
+              TextFormField(controller: _priceCtl, decoration: const InputDecoration(labelText: 'Ціна (необовʼязково)'), keyboardType: TextInputType.number),
+              TextFormField(controller: _noteCtl, decoration: const InputDecoration(labelText: 'Опис (необовʼязково)')),
               const SizedBox(height: 16),
-              ElevatedButton(onPressed: _save, child: const Text('Save'))
+              ElevatedButton(onPressed: _save, child: const Text('Зберегти'))
             ],
           ),
         ),

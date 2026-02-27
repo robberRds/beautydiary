@@ -37,13 +37,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: const Text('Налаштування')),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(children: [
-          TextField(controller: _ctl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Minimum interval between appointments (minutes)')),
+          TextField(controller: _ctl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Мінімальний інтервал між записами (хв)')),
           const SizedBox(height: 12),
-          ElevatedButton(onPressed: _save, child: const Text('Save'))
+          ElevatedButton(onPressed: _save, child: const Text('Зберегти'))
         ]),
       ),
     );
