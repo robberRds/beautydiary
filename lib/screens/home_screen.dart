@@ -76,13 +76,20 @@ class _HomeScreenState extends State<HomeScreen> {
               if (v == 'pdf') {
                 final all = await DBService().allAppointments();
                 final path = await ExportService().exportAppointmentsToPdf(all);
-                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('PDF saved: $path')));
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('PDF збережено: $path')));
               } else if (v == 'xlsx') {
                 final all = await DBService().allAppointments();
                 final path = await ExportService().exportAppointmentsToExcel(all);
-                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Excel saved: $path')));
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Excel збережено: $path')));
               } else if (v == 'seed') {
                 await _seedSampleData();
+              } else if (v == 'clear') {
+                final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(title: const Text('Очищення'), content: const Text('Видалити всі записи?'), actions: [TextButton(onPressed: () => Navigator.of(c).pop(false), child: const Text('Ні')), TextButton(onPressed: () => Navigator.of(c).pop(true), child: const Text('Так'))]));
+                if (ok == true) {
+                  await DBService().deleteAllAppointments();
+                  await _loadForMonth(_focused);
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Всі записи видалено')));
+                }
               }
             },
             itemBuilder: (c) => [
@@ -90,6 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const PopupMenuItem(value: 'xlsx', child: Text('Експортувати Excel')),
               const PopupMenuDivider(),
               const PopupMenuItem(value: 'seed', child: Text('Додати приклади даних')),
+              const PopupMenuItem(value: 'clear', child: Text('Очистити всі записи')),
             ],
           )
         ],
@@ -151,20 +159,54 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildList() {
     final list = _eventsForDay(_selected);
     if (list.isEmpty) {
-      return const Center(child: Text('No appointments'));
+      return const Center(child: Text('Немає записів'));
     }
     return ListView.builder(
       itemCount: list.length,
+      padding: const EdgeInsets.all(8),
       itemBuilder: (context, i) {
         final a = list[i];
         final time = DateFormat.Hm().format(a.dateTime);
-        return ListTile(
-          title: Text('${a.clientName} — $time'),
-          subtitle: Text('${a.price == null ? '' : '${a.price}₴ — '} ${a.phone ?? ''}'),
-          onTap: () async {
-            await Navigator.pushNamed(context, '/new', arguments: a);
-            await _loadForMonth(_focused);
-          },
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          child: Card(
+            elevation: 6,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () async {
+                await Navigator.pushNamed(context, '/new', arguments: a);
+                await _loadForMonth(_focused);
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: Colors.grey.shade200,
+                      child: Text(time, style: const TextStyle(fontSize: 12, color: Colors.black87)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(a.clientName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 4),
+                        Text(a.note ?? '', style: TextStyle(color: Colors.grey.shade700)),
+                      ]),
+                    ),
+                    const SizedBox(width: 8),
+                    Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      if (a.price != null) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.grey.shade900, borderRadius: BorderRadius.circular(8)), child: Text('${a.price!.toStringAsFixed(0)}₴', style: const TextStyle(color: Colors.white))),
+                      const SizedBox(height: 8),
+                      IconButton(onPressed: () async { await DBService().deleteAppointment(a.id!); await _loadForMonth(_focused); }, icon: Icon(Icons.delete_outline, color: Colors.grey.shade700)),
+                    ])
+                  ],
+                ),
+              ),
+            ),
+          ),
         );
       },
     );

@@ -49,6 +49,11 @@ class DBService {
     return await database.delete('appointments', where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<int> deleteAllAppointments() async {
+    final database = await db;
+    return await database.delete('appointments');
+  }
+
   Future<List<Appointment>> appointmentsForDay(DateTime day) async {
     final database = await db;
     final start = DateTime(day.year, day.month, day.day);

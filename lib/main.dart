@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       title: 'Beauty Diary',
-      theme: theme,
+      theme: theme.copyWith(floatingActionButtonTheme: theme.floatingActionButtonTheme.copyWith(foregroundColor: Colors.white)),
       locale: const Locale('uk'),
       supportedLocales: const [Locale('uk'), Locale('en')],
       localizationsDelegates: const [
