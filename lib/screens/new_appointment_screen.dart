@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,6 +21,22 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
   final _noteCtl = TextEditingController();
   DateTime _dt = DateTime.now();
   int? _editingId;
+  double minPrice = 0.0;
+  int phoneDigits = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrefs();
+  }
+
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      minPrice = prefs.getDouble('minPrice') ?? 0.0;
+      phoneDigits = prefs.getInt('phoneDigits') ?? 10;
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -122,9 +139,34 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
                 Expanded(child: Text('Час: ${DateFormat.yMMMd().add_Hm().format(_dt)}')),
                 TextButton(onPressed: _pickDateTime, child: const Text('Змінити'))
               ]),
-              TextFormField(controller: _phoneCtl, decoration: const InputDecoration(labelText: 'Телефон (необовʼязково)')),
-              TextFormField(controller: _priceCtl, decoration: const InputDecoration(labelText: 'Ціна (необовʼязково)'), keyboardType: TextInputType.number),
-              TextFormField(controller: _noteCtl, decoration: const InputDecoration(labelText: 'Опис (необовʼязково)')),
+              TextFormField(
+                controller: _phoneCtl,
+                decoration: const InputDecoration(labelText: 'Телефон (необовʼязково)'),
+                keyboardType: TextInputType.phone,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null;
+                  final digits = v.replaceAll(RegExp(r'\D'), '');
+                  if (digits.length != phoneDigits) return 'Потрібно $phoneDigits цифр';
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _priceCtl,
+                decoration: const InputDecoration(labelText: 'Ціна (необовʼязково)'),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return null;
+                  final p = double.tryParse(v.replaceAll(',', '.'));
+                  if (p == null) return 'Невірний формат ціни';
+                  if (p < minPrice) return 'Мінімальна ціна: ${minPrice.toStringAsFixed(2)}';
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _noteCtl,
+                decoration: const InputDecoration(labelText: 'Опис (необовʼязково)'),
+              ),
               const SizedBox(height: 16),
               ElevatedButton(onPressed: _save, child: const Text('Зберегти'))
             ],

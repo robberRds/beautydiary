@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../services/db_service.dart';
 import '../models/appointment.dart';
 
@@ -34,6 +35,7 @@ class _StatsScreenState extends State<StatsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final df = DateFormat.yMMMd().add_Hm();
     return Scaffold(
       appBar: AppBar(title: const Text('Фінансова статистика')),
       body: Padding(
@@ -51,6 +53,8 @@ class _StatsScreenState extends State<StatsScreen> {
               const SizedBox(width: 12),
               Text('Доходи: ${total.toStringAsFixed(2)}')
             ]),
+            const SizedBox(height: 8),
+            Align(alignment: Alignment.centerLeft, child: Text('Період: ${df.format(range.start)} — ${df.format(range.end.subtract(const Duration(seconds:1)))}')),
             const SizedBox(height: 20),
             Expanded(child: _buildChart())
           ],
