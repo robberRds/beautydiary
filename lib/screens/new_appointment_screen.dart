@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/appointment.dart';
 import '../services/db_service.dart';
@@ -104,7 +105,7 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_editingId == null ? 'Новий запис' : 'Редагувати запис'), actions: _editingId != null ? [IconButton(onPressed: _delete, icon: const Icon(Icons.delete))] : null),
+      appBar: AppBar(title: Text(_editingId == null ? 'Новий запис' : 'Редагувати запис'), actions: _editingId != null ? [IconButton(onPressed: _delete, icon: const FaIcon(FontAwesomeIcons.trashAlt))] : null),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Form(

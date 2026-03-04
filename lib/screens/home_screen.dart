@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/db_service.dart';
 import '../services/export_service.dart';
 import '../models/appointment.dart';
@@ -65,12 +66,12 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Щоденник майстра'),
         actions: [
-          IconButton(
+            IconButton(
               onPressed: () => Navigator.pushNamed(context, '/stats'),
-              icon: const Icon(Icons.bar_chart)),
-          IconButton(
+              icon: const FaIcon(FontAwesomeIcons.chartSimple)),
+            IconButton(
               onPressed: () => Navigator.pushNamed(context, '/settings'),
-              icon: const Icon(Icons.settings)),
+              icon: const FaIcon(FontAwesomeIcons.gear)),
           PopupMenuButton<String>(
             onSelected: (v) async {
               if (v == 'pdf') {
@@ -151,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
           await Navigator.pushNamed(context, '/new', arguments: _selected);
           await _loadForMonth(_focused);
         },
-        child: const Icon(Icons.add),
+        child: const FaIcon(FontAwesomeIcons.plus),
       ),
     );
   }
@@ -200,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                       if (a.price != null) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.grey.shade900, borderRadius: BorderRadius.circular(8)), child: Text('${a.price!.toStringAsFixed(0)}₴', style: const TextStyle(color: Colors.white))),
                       const SizedBox(height: 8),
-                      IconButton(onPressed: () async { await DBService().deleteAppointment(a.id!); await _loadForMonth(_focused); }, icon: Icon(Icons.delete_outline, color: Colors.grey.shade700)),
+                      IconButton(onPressed: () async { await DBService().deleteAppointment(a.id!); await _loadForMonth(_focused); }, icon: FaIcon(FontAwesomeIcons.trashAlt, color: Colors.grey.shade700)),
                     ])
                   ],
                 ),
