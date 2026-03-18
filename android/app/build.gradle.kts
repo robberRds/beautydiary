@@ -24,6 +24,9 @@ android {
     tasks.withType<JavaCompile>().configureEach {
         sourceCompatibility = JavaVersion.VERSION_11.toString()
         targetCompatibility = JavaVersion.VERSION_11.toString()
+        // suppress obsolete -source/-target option lint warnings
+        options.compilerArgs.add("-Xlint:-options")
+        options.encoding = "UTF-8"
     }
 
     defaultConfig {
