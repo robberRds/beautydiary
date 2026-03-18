@@ -26,9 +26,12 @@ void main() {
 
     // Verify seeded appointment for today appears (sample includes 'Anna' for today)
     final today = DateTime.now().day.toString();
-    final dayCellFinder = find.text(today).first;
-    await tester.ensureVisible(dayCellFinder);
-    await tester.tap(dayCellFinder);
+    final dayTextFinder = find.text(today).first;
+    await tester.ensureVisible(dayTextFinder);
+    await tester.pumpAndSettle();
+    // Tap by coordinates to avoid hit-test warnings when the text itself isn't the tappable widget
+    final center = tester.getCenter(dayTextFinder);
+    await tester.tapAt(center);
     await tester.pumpAndSettle(const Duration(seconds: 1));
     expect(find.text('Anna'), findsOneWidget);
   });
