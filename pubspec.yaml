@@ -42,9 +42,9 @@ dependencies:
   path: ^1.8.3
   table_calendar: ^3.0.9
   intl: ^0.19.0
-  # fl_chart removed due to Flutter compatibility; replace later if desired
   pdf: ^3.10.1
   printing: ^5.11.0
+  # syncfusion_flutter_charts removed; using local painters instead
   excel: ^2.0.6
   shared_preferences: ^2.1.1
   uuid: 4.5.3

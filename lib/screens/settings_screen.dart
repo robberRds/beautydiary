@@ -47,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       minPrice = p;
       phoneDigits = pd;
     });
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved')));
   }
 

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:excel/excel.dart';
@@ -14,9 +13,9 @@ class ExportService {
     doc.addPage(pw.MultiPage(build: (c) {
       return [
         pw.Header(level: 0, child: pw.Text('Appointments')),
-        pw.Table.fromTextArray(
-            headers: ['Date', 'Client', 'Phone', 'Price', 'Note'],
-            data: items.map((a) => [df.format(a.dateTime), a.clientName, a.phone ?? '', a.price?.toStringAsFixed(2) ?? '', a.note ?? '']).toList())
+        pw.TableHelper.fromTextArray(
+          headers: ['Date', 'Client', 'Phone', 'Price', 'Note'],
+          data: items.map((a) => [df.format(a.dateTime), a.clientName, a.phone ?? '', a.price?.toStringAsFixed(2) ?? '', a.note ?? '']).toList())
       ];
     }));
 

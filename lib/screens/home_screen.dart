@@ -26,8 +26,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadForMonth(DateTime forMonth) async {
     final db = DBService();
-    final start = DateTime(forMonth.year, forMonth.month, 1);
-    final end = DateTime(forMonth.year, forMonth.month + 1, 1);
     final all = await db.allAppointments();
     final map = <DateTime, List<Appointment>>{};
     for (final a in all) {
@@ -57,7 +55,8 @@ class _HomeScreenState extends State<HomeScreen> {
       await db.insertAppointment(s);
     }
     await _loadForMonth(_focused);
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sample data inserted')));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sample data inserted')));
   }
 
   @override
@@ -74,14 +73,17 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: const FaIcon(FontAwesomeIcons.gear)),
           PopupMenuButton<String>(
             onSelected: (v) async {
+              final scaffold = ScaffoldMessenger.of(context);
               if (v == 'pdf') {
                 final all = await DBService().allAppointments();
                 final path = await ExportService().exportAppointmentsToPdf(all);
-                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('PDF збережено: $path')));
+                if (!mounted) return;
+                scaffold.showSnackBar(SnackBar(content: Text('PDF збережено: $path')));
               } else if (v == 'xlsx') {
                 final all = await DBService().allAppointments();
                 final path = await ExportService().exportAppointmentsToExcel(all);
-                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Excel збережено: $path')));
+                if (!mounted) return;
+                scaffold.showSnackBar(SnackBar(content: Text('Excel збережено: $path')));
               } else if (v == 'seed') {
                 await _seedSampleData();
               } else if (v == 'clear') {
@@ -89,7 +91,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (ok == true) {
                   await DBService().deleteAllAppointments();
                   await _loadForMonth(_focused);
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Всі записи видалено')));
+                  if (!mounted) return;
+                  scaffold.showSnackBar(const SnackBar(content: Text('Всі записи видалено')));
                 }
               }
             },
@@ -201,7 +204,26 @@ class _HomeScreenState extends State<HomeScreen> {
                     Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                       if (a.price != null) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.grey.shade900, borderRadius: BorderRadius.circular(8)), child: Text('${a.price!.toStringAsFixed(0)}₴', style: const TextStyle(color: Colors.white))),
                       const SizedBox(height: 8),
-                      IconButton(onPressed: () async { await DBService().deleteAppointment(a.id!); await _loadForMonth(_focused); }, icon: FaIcon(FontAwesomeIcons.trashAlt, color: Colors.grey.shade700)),
+                      IconButton(
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (c) => AlertDialog(
+                              title: const Text('Підтвердження'),
+                              content: const Text('Видалити цей запис?'),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.of(c).pop(false), child: const Text('Ні')),
+                                TextButton(onPressed: () => Navigator.of(c).pop(true), child: const Text('Так')),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            await DBService().deleteAppointment(a.id!);
+                            await _loadForMonth(_focused);
+                          }
+                        },
+                        icon: FaIcon(FontAwesomeIcons.trashCan, color: Colors.grey.shade700),
+                      ),
                     ])
                   ],
                 ),

@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 class Appointment {
   int? id;
   final String clientName;

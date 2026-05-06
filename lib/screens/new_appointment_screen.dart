@@ -45,7 +45,7 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
     if (arg is DateTime) {
       _dt = DateTime(arg.year, arg.month, arg.day, _dt.hour, _dt.minute);
     } else if (arg is Appointment) {
-      final a = arg as Appointment;
+      final a = arg;
       _editingId = a.id;
       _nameCtl.text = a.clientName;
       _phoneCtl.text = a.phone ?? '';
@@ -73,8 +73,10 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
       locale: const Locale('uk'),
     );
     if (date == null) return;
+    if (!mounted) return;
     final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_dt));
     if (time == null) return;
+    if (!mounted) return;
     setState(() {
       _dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
     });
@@ -87,7 +89,8 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
     final db = DBService();
     final conflict = await db.hasConflict(_dt, minInterval, ignoreId: _editingId);
     if (conflict) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Конфлікт з існуючим записом')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Конфлікт з існуючим записом')));
       return;
     }
     final price = _priceCtl.text.isEmpty ? null : double.tryParse(_priceCtl.text);
@@ -97,7 +100,8 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
     } else {
       await db.updateAppointment(a);
     }
-    if (mounted) Navigator.of(context).pop();
+    if (!mounted) return;
+    Navigator.of(context).pop();
   }
 
   Future<void> _delete() async {
@@ -115,14 +119,15 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
     );
     if (ok == true) {
       await DBService().deleteAppointment(_editingId!);
-      if (mounted) Navigator.of(context).pop();
+      if (!mounted) return;
+      Navigator.of(context).pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_editingId == null ? 'Новий запис' : 'Редагувати запис'), actions: _editingId != null ? [IconButton(onPressed: _delete, icon: const FaIcon(FontAwesomeIcons.trashAlt))] : null),
+      appBar: AppBar(title: Text(_editingId == null ? 'Новий запис' : 'Редагувати запис'), actions: _editingId != null ? [IconButton(onPressed: _delete, icon: const FaIcon(FontAwesomeIcons.trashCan))] : null),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Form(
