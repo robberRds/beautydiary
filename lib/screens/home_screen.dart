@@ -63,8 +63,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Щоденник майстра'),
+        title: const Text('Щоденник'),
         actions: [
+            IconButton(
+              onPressed: () => Navigator.pushNamed(context, '/history'),
+              icon: const Icon(Icons.history),
+              tooltip: 'Історія відвідувань',
+            ),
             IconButton(
               onPressed: () => Navigator.pushNamed(context, '/stats'),
               icon: const FaIcon(FontAwesomeIcons.chartSimple)),
@@ -109,6 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         children: [
           TableCalendar(
+            locale: 'uk',
             firstDay: DateTime.utc(2000, 1, 1),
             lastDay: DateTime.utc(2100, 12, 31),
             focusedDay: _focused,
@@ -170,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.all(8),
       itemBuilder: (context, i) {
         final a = list[i];
-        final time = DateFormat.Hm().format(a.dateTime);
+        final time = DateFormat.Hm('uk').format(a.dateTime);
         return AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           margin: const EdgeInsets.symmetric(vertical: 6),

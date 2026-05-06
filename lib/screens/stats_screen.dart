@@ -36,7 +36,7 @@ class _StatsScreenState extends State<StatsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final df = DateFormat.yMMMd().add_Hm();
+    final df = DateFormat.yMMMd('uk').add_Hm();
     return Scaffold(
       appBar: AppBar(title: const Text('Фінансова статистика'), actions: [
         IconButton(icon: const Icon(Icons.pie_chart_outline), tooltip: 'Показати діаграми', onPressed: () => _buildCharts(context))
@@ -70,8 +70,8 @@ class _StatsScreenState extends State<StatsScreen> {
   Widget _buildChart() {
     if (items.isEmpty) return const Center(child: Text('No records in range'));
 
-    final dayDf = DateFormat.yMMMd();
-    final timeDf = DateFormat.Hm();
+    final dayDf = DateFormat.yMMMd('uk');
+    final timeDf = DateFormat.Hm('uk');
 
     final Map<DateTime, List<Appointment>> grouped = {};
     for (final a in items) {
@@ -119,7 +119,7 @@ class _StatsScreenState extends State<StatsScreen> {
       byDay[d] = (byDay[d] ?? 0.0) + p;
     }
 
-    final dayData = byDay.entries.map((e) => ChartData(label: DateFormat.Md().format(e.key), value: e.value)).toList()..sort((a,b) => a.label.compareTo(b.label));
+    final dayData = byDay.entries.map((e) => ChartData(label: DateFormat.Md('uk').format(e.key), value: e.value)).toList()..sort((a,b) => a.label.compareTo(b.label));
 
       showDialog<void>(context: context, builder: (c) {
         return AlertDialog(
