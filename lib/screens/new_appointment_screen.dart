@@ -136,12 +136,13 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
             children: [
               TextFormField(
                 controller: _nameCtl,
-                decoration: const InputDecoration(labelText: 'Імʼя клієнта'),
+                decoration: const InputDecoration(labelText: 'Імʼя клієнта', helperText: 'Вводьте українськими або рідною мовою'),
+                textCapitalization: TextCapitalization.words,
                 validator: (v) => v == null || v.trim().isEmpty ? 'Обовʼязково' : null,
               ),
               const SizedBox(height: 8),
               Row(children: [
-                Expanded(child: Text('Час: ${DateFormat.yMMMd().add_Hm().format(_dt)}')),
+                Expanded(child: Text('Час: ${DateFormat.yMMMd('uk').add_Hm().format(_dt)}')),
                 TextButton(onPressed: _pickDateTime, child: const Text('Змінити'))
               ]),
               TextFormField(
@@ -170,7 +171,8 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
               ),
               TextFormField(
                 controller: _noteCtl,
-                decoration: const InputDecoration(labelText: 'Опис (необовʼязково)'),
+                decoration: const InputDecoration(labelText: 'Опис (необовʼязково)', helperText: 'Можна вводити українською'),
+                textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: 16),
               ElevatedButton(onPressed: _save, child: const Text('Зберегти'))
