@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/backup_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -15,6 +16,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double minPrice = 0.0;
   int phoneDigits = 10;
   final _phoneDigitsCtl = TextEditingController();
+  bool autoBackup = false;
+  bool icloudSync = false;
 
   @override
   void initState() {
@@ -31,6 +34,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _priceCtl.text = minPrice.toStringAsFixed(2);
       phoneDigits = prefs.getInt('phoneDigits') ?? 10;
       _phoneDigitsCtl.text = phoneDigits.toString();
+      autoBackup = prefs.getBool('autoBackup') ?? false;
+      icloudSync = prefs.getBool('icloudSync') ?? false;
     });
   }
 
@@ -42,13 +47,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setInt('minInterval', v);
     await prefs.setDouble('minPrice', p);
     await prefs.setInt('phoneDigits', pd);
+    await prefs.setBool('autoBackup', autoBackup);
+    await prefs.setBool('icloudSync', icloudSync);
     setState(() {
       minInterval = v;
       minPrice = p;
       phoneDigits = pd;
     });
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved')));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Збережено')));
   }
 
   @override
@@ -63,6 +70,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextField(controller: _priceCtl, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Мінімальна ціна запису')),
           const SizedBox(height: 12),
           TextField(controller: _phoneDigitsCtl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Кількість цифр у телефоні (наприклад 10)')),
+          const SizedBox(height: 12),
+          SwitchListTile(
+            title: const Text('Автоматичне резервне копіювання'),
+            value: autoBackup,
+            onChanged: (v) async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('autoBackup', v);
+              setState(() => autoBackup = v);
+            },
+          ),
+          SwitchListTile(
+            title: const Text('Синхронізація з iCloud (iOS)'),
+            value: icloudSync,
+            onChanged: (v) async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('icloudSync', v);
+              setState(() => icloudSync = v);
+            },
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final scaffold = ScaffoldMessenger.of(context);
+              scaffold.showSnackBar(const SnackBar(content: Text('Розпочато резервне копіювання...')));
+              final res = await BackupService().backupNow(toIcloud: icloudSync);
+              if (!mounted) return;
+              scaffold.showSnackBar(SnackBar(content: Text(res)));
+            },
+            child: const Text('Резервне копіювання зараз'),
+          ),
           const SizedBox(height: 12),
           ElevatedButton(onPressed: _save, child: const Text('Зберегти'))
         ]),

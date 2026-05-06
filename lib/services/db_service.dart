@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/appointment.dart';
+import 'backup_service.dart';
 
 class DBService {
   static final DBService _instance = DBService._internal();
@@ -35,23 +37,46 @@ class DBService {
 
   Future<int> insertAppointment(Appointment a) async {
     final database = await db;
-    return await database.insert('appointments', a.toMap());
+    final res = await database.insert('appointments', a.toMap());
+    unawaited(_maybeBackup());
+    return res;
   }
 
   Future<int> updateAppointment(Appointment a) async {
     final database = await db;
-    if (a.id == null) return await insertAppointment(a);
-    return await database.update('appointments', a.toMap(), where: 'id = ?', whereArgs: [a.id]);
+    if (a.id == null) {
+      final id = await insertAppointment(a);
+      return id;
+    }
+    final res = await database.update('appointments', a.toMap(), where: 'id = ?', whereArgs: [a.id]);
+    unawaited(_maybeBackup());
+    return res;
   }
 
   Future<int> deleteAppointment(int id) async {
     final database = await db;
-    return await database.delete('appointments', where: 'id = ?', whereArgs: [id]);
+    final res = await database.delete('appointments', where: 'id = ?', whereArgs: [id]);
+    unawaited(_maybeBackup());
+    return res;
+  }
+
+  // Trigger backup after mutating operations if auto-backup enabled
+  Future<void> _maybeBackup() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final auto = prefs.getBool('autoBackup') ?? false;
+      if (!auto) return;
+      final icl = prefs.getBool('icloudSync') ?? false;
+      // run but don't await to avoid blocking DB operations
+      BackupService().backupNow(toIcloud: icl);
+    } catch (_) {}
   }
 
   Future<int> deleteAllAppointments() async {
     final database = await db;
-    return await database.delete('appointments');
+    final res = await database.delete('appointments');
+    unawaited(_maybeBackup());
+    return res;
   }
 
   Future<List<Appointment>> appointmentsForDay(DateTime day) async {

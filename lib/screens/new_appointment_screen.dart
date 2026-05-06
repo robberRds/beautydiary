@@ -136,9 +136,18 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
             children: [
               TextFormField(
                 controller: _nameCtl,
-                decoration: const InputDecoration(labelText: 'Імʼя клієнта', helperText: 'Вводьте українськими або рідною мовою'),
+                keyboardType: TextInputType.text,
+                decoration: const InputDecoration(labelText: 'Імʼя клієнта'),
                 textCapitalization: TextCapitalization.words,
-                validator: (v) => v == null || v.trim().isEmpty ? 'Обовʼязково' : null,
+                onChanged: (v) {
+                  debugPrint('name onChanged: "$v"');
+                },
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Обовʼязково';
+                  final hasLetter = RegExp(r'[A-Za-z\u0400-\u04FF]').hasMatch(v);
+                  if (!hasLetter) return 'Введіть імя літерою (латиниця або кирилиця)';
+                  return null;
+                },
               ),
               const SizedBox(height: 8),
               Row(children: [
