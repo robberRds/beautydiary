@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/appointment.dart';
 import '../services/db_service.dart';
 
@@ -19,6 +22,7 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
   final _phoneCtl = TextEditingController();
   final _priceCtl = TextEditingController();
   final _noteCtl = TextEditingController();
+  String? _imagePath;
   DateTime _dt = DateTime.now();
   int? _editingId;
   double minPrice = 0.0;
@@ -52,6 +56,7 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
       _priceCtl.text = a.price?.toString() ?? '';
       _noteCtl.text = a.note ?? '';
       _dt = a.dateTime;
+      _imagePath = a.photoPath;
     }
   }
 
@@ -94,7 +99,7 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
       return;
     }
     final price = _priceCtl.text.isEmpty ? null : double.tryParse(_priceCtl.text);
-    final a = Appointment(id: _editingId, clientName: _nameCtl.text.trim(), dateTime: _dt, phone: _phoneCtl.text.isEmpty ? null : _phoneCtl.text.trim(), price: price, note: _noteCtl.text.isEmpty ? null : _noteCtl.text.trim());
+    final a = Appointment(id: _editingId, clientName: _nameCtl.text.trim(), dateTime: _dt, phone: _phoneCtl.text.isEmpty ? null : _phoneCtl.text.trim(), price: price, note: _noteCtl.text.isEmpty ? null : _noteCtl.text.trim(), photoPath: _imagePath);
     if (_editingId == null) {
       await db.insertAppointment(a);
     } else {
@@ -102,6 +107,30 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
     }
     if (!mounted) return;
     Navigator.of(context).pop();
+  }
+
+  Future<void> _pickImage(ImageSource src) async {
+    try {
+      final picker = ImagePicker();
+      final x = await picker.pickImage(source: src, maxWidth: 1600, imageQuality: 80);
+      if (x == null) return;
+      final bytes = await x.readAsBytes();
+      final dir = await getApplicationDocumentsDirectory();
+      final filename = 'appointment_${DateTime.now().millisecondsSinceEpoch}${extension(x.path)}';
+      final out = File('${dir.path}/$filename');
+      await out.writeAsBytes(bytes);
+      setState(() {
+        _imagePath = out.path;
+      });
+    } catch (e) {
+      debugPrint('Image pick error: $e');
+    }
+  }
+
+  String extension(String p) {
+    final i = p.lastIndexOf('.');
+    if (i >= 0) return p.substring(i);
+    return '.jpg';
   }
 
   Future<void> _delete() async {
@@ -136,22 +165,12 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
             children: [
               TextFormField(
                 controller: _nameCtl,
-                keyboardType: TextInputType.text,
                 decoration: const InputDecoration(labelText: 'Імʼя клієнта'),
-                textCapitalization: TextCapitalization.words,
-                onChanged: (v) {
-                  debugPrint('name onChanged: "$v"');
-                },
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Обовʼязково';
-                  final hasLetter = RegExp(r'[A-Za-z\u0400-\u04FF]').hasMatch(v);
-                  if (!hasLetter) return 'Введіть імя літерою (латиниця або кирилиця)';
-                  return null;
-                },
+                validator: (v) => v == null || v.trim().isEmpty ? 'Обовʼязково' : null,
               ),
               const SizedBox(height: 8),
               Row(children: [
-                Expanded(child: Text('Час: ${DateFormat.yMMMd('uk').add_Hm().format(_dt)}')),
+                Expanded(child: Text('Час: ${DateFormat.yMMMd().add_Hm().format(_dt)}')),
                 TextButton(onPressed: _pickDateTime, child: const Text('Змінити'))
               ]),
               TextFormField(
@@ -180,9 +199,17 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
               ),
               TextFormField(
                 controller: _noteCtl,
-                decoration: const InputDecoration(labelText: 'Опис (необовʼязково)', helperText: 'Можна вводити українською'),
-                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(labelText: 'Опис (необовʼязково)'),
               ),
+              const SizedBox(height: 8),
+              if (_imagePath != null) Center(child: Image.file(File(_imagePath!), width: 160, height: 160, fit: BoxFit.cover)),
+              Row(children: [
+                ElevatedButton.icon(onPressed: () => _pickImage(ImageSource.gallery), icon: const Icon(Icons.photo_library), label: const Text('З галереї')),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(onPressed: () => _pickImage(ImageSource.camera), icon: const Icon(Icons.camera_alt), label: const Text('Зробити фото')),
+                const SizedBox(width: 8),
+                if (_imagePath != null) TextButton(onPressed: () => setState(() => _imagePath = null), child: const Text('Видалити'))
+              ]),
               const SizedBox(height: 16),
               ElevatedButton(onPressed: _save, child: const Text('Зберегти'))
             ],

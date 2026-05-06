@@ -5,6 +5,7 @@ class Appointment {
   final String? phone;
   final double? price;
   final String? note;
+  final String? photoPath;
 
   Appointment({
     this.id,
@@ -13,6 +14,7 @@ class Appointment {
     this.phone,
     this.price,
     this.note,
+    this.photoPath,
   });
 
   Map<String, Object?> toMap() {
@@ -23,6 +25,7 @@ class Appointment {
       'phone': phone,
       'price': price,
       'note': note,
+      'photoPath': photoPath,
     };
   }
 
@@ -34,6 +37,7 @@ class Appointment {
       phone: m['phone'] as String?,
       price: m['price'] == null ? null : (m['price'] as num).toDouble(),
       note: m['note'] as String?,
+      photoPath: m['photoPath'] as String?,
     );
   }
 }

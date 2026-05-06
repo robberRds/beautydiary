@@ -22,7 +22,7 @@ class DBService {
   Future<Database> _initDB() async {
     final databasesPath = await getDatabasesPath();
     final path = join(databasesPath, 'beautydiary.db');
-    return await openDatabase(path, version: 1, onCreate: (db, v) async {
+    return await openDatabase(path, version: 2, onCreate: (db, v) async {
       await db.execute('''
         CREATE TABLE appointments(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,9 +30,15 @@ class DBService {
           dateTime TEXT NOT NULL,
           phone TEXT,
           price REAL,
-          note TEXT
+          note TEXT,
+          photoPath TEXT
         )
       ''');
+    }, onUpgrade: (db, oldV, newV) async {
+      if (oldV < 2) {
+        // add photoPath column for migration from version 1
+        await db.execute('ALTER TABLE appointments ADD COLUMN photoPath TEXT');
+      }
     });
   }
 

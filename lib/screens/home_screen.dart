@@ -71,6 +71,11 @@ class _HomeScreenState extends State<HomeScreen> {
               tooltip: 'Історія відвідувань',
             ),
             IconButton(
+              onPressed: () => Navigator.pushNamed(context, '/photos'),
+              icon: const Icon(Icons.photo_library),
+              tooltip: 'Галерея фото',
+            ),
+            IconButton(
               onPressed: () => Navigator.pushNamed(context, '/stats'),
               icon: const FaIcon(FontAwesomeIcons.chartSimple)),
             IconButton(

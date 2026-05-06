@@ -8,6 +8,7 @@ import 'screens/stats_screen.dart';
 import 'screens/settings_screen.dart';
 import 'services/notification_service.dart';
 import 'screens/visit_history_screen.dart';
+import 'screens/photo_gallery_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,6 +57,7 @@ class MyApp extends StatelessWidget {
         '/home': (c) => const HomeScreen(),
         '/history': (c) => const VisitHistoryScreen(),
         '/new': (c) => const NewAppointmentScreen(),
+          '/photos': (c) => const PhotoGalleryScreen(),
         '/stats': (c) => const StatsScreen(),
         '/settings': (c) => const SettingsScreen(),
       },

@@ -42,6 +42,7 @@ dependencies:
   path: ^1.8.3
   table_calendar: ^3.0.9
   intl: ^0.19.0
+  image_picker: ^0.8.7
   pdf: ^3.10.1
   printing: ^5.11.0
   # syncfusion_flutter_charts removed; using local painters instead
