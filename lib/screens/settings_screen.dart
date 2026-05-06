@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/backup_service.dart';
+import 'notification_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -70,6 +71,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextField(controller: _priceCtl, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Мінімальна ціна запису')),
           const SizedBox(height: 12),
           TextField(controller: _phoneDigitsCtl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Кількість цифр у телефоні (наприклад 10)')),
+          const SizedBox(height: 12),
+          ElevatedButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationSettingsScreen())), child: const Text('Налаштування нагадувань')),
           const SizedBox(height: 12),
           SwitchListTile(
             title: const Text('Автоматичне резервне копіювання'),

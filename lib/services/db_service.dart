@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/appointment.dart';
 import 'backup_service.dart';
+import 'notification_service.dart';
 
 class DBService {
   static final DBService _instance = DBService._internal();
@@ -39,6 +40,7 @@ class DBService {
     final database = await db;
     final res = await database.insert('appointments', a.toMap());
     unawaited(_maybeBackup());
+    unawaited(NotificationService().rescheduleAll());
     return res;
   }
 
@@ -50,6 +52,7 @@ class DBService {
     }
     final res = await database.update('appointments', a.toMap(), where: 'id = ?', whereArgs: [a.id]);
     unawaited(_maybeBackup());
+    unawaited(NotificationService().rescheduleAll());
     return res;
   }
 
@@ -57,6 +60,7 @@ class DBService {
     final database = await db;
     final res = await database.delete('appointments', where: 'id = ?', whereArgs: [id]);
     unawaited(_maybeBackup());
+    unawaited(NotificationService().rescheduleAll());
     return res;
   }
 
@@ -76,6 +80,7 @@ class DBService {
     final database = await db;
     final res = await database.delete('appointments');
     unawaited(_maybeBackup());
+    unawaited(NotificationService().rescheduleAll());
     return res;
   }
 

@@ -6,11 +6,16 @@ import 'screens/home_screen.dart';
 import 'screens/new_appointment_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/settings_screen.dart';
+import 'services/notification_service.dart';
 import 'screens/visit_history_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('uk');
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    await NotificationService().init();
+    await NotificationService().rescheduleAll();
+  });
   runApp(const MyApp());
 }
 
