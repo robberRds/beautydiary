@@ -17,6 +17,9 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
   List<Appointment> _all = [];
   List<Appointment> _filtered = [];
   final _searchCtl = TextEditingController();
+  // pagination
+  static const int _perPage = 10;
+  int _page = 0;
 
   @override
   void initState() {
@@ -35,6 +38,7 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
 
   void _applyFilter(String q) {
     final low = q.trim().toLowerCase();
+    _page = 0;
     if (low.isEmpty) {
       setState(() => _filtered = _all);
       return;
@@ -53,37 +57,66 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
         Expanded(
           child: _filtered.isEmpty
               ? const Center(child: Text('Немає фото'))
-              : GridView.builder(
-                  padding: const EdgeInsets.all(8),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 0.8, crossAxisSpacing: 8, mainAxisSpacing: 8),
-                  itemCount: _filtered.length,
-                  itemBuilder: (c, i) {
-                    final a = _filtered[i];
-                    return Card(
-                      clipBehavior: Clip.hardEdge,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: Column(children: [
-                        Expanded(
-                            child: a.photoPath != null
-                                ? InkWell(
-                                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PhotoViewerScreen(path: a.photoPath!))),
-                                    child: Image.file(File(a.photoPath!), fit: BoxFit.cover, width: double.infinity),
-                                  )
-                                : const SizedBox.shrink()),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(a.clientName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            Text(DateFormat.yMMMd('uk').format(a.dateTime)),
-                            if (a.price != null) Align(alignment: Alignment.centerRight, child: Text('${a.price!.toStringAsFixed(0)}₴', style: const TextStyle(fontWeight: FontWeight.w600))),
+              : Column(children: [
+                  // paging controls
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6.0),
+                    child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      IconButton(onPressed: _page > 0 ? () => setState(() => _page--) : null, icon: const Icon(Icons.arrow_back)),
+                      Builder(builder: (c) {
+                        final total = _filtered.length;
+                        final totalPages = (total / _perPage).ceil().clamp(1, 9999);
+                        return Text('Сторінка ${_page + 1} з $totalPages');
+                      }),
+                      IconButton(onPressed: ((_page + 1) * _perPage < _filtered.length) ? () => setState(() => _page++) : null, icon: const Icon(Icons.arrow_forward)),
+                    ]),
+                  ),
+                  Expanded(
+                    child: GridView.builder(
+                      padding: const EdgeInsets.all(8),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.8,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                      ),
+                      itemCount: (() {
+                        final start = (_page * _perPage).clamp(0, _filtered.length);
+                        final end = ((start + _perPage) > _filtered.length) ? _filtered.length : (start + _perPage);
+                        return end - start;
+                      })(),
+                      itemBuilder: (c, i) {
+                        final start = (_page * _perPage).clamp(0, _filtered.length);
+                        final a = _filtered[start + i];
+                        return Card(
+                          clipBehavior: Clip.hardEdge,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Column(children: [
+                            Expanded(
+                              child: a.photoPath != null
+                                  ? InkWell(
+                                      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PhotoViewerScreen(path: a.photoPath!))),
+                                      child: Image.file(File(a.photoPath!), fit: BoxFit.cover, width: double.infinity),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(a.clientName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 4),
+                                Text(DateFormat.yMMMd('uk').format(a.dateTime)),
+                                if (a.price != null)
+                                  Align(alignment: Alignment.centerRight, child: Text('${a.price!.toStringAsFixed(0)}₴', style: const TextStyle(fontWeight: FontWeight.w600))),
+                              ]),
+                            ),
                           ]),
-                        )
-                      ]),
-                    );
-                  },
-                ),
-        )
+                        );
+                      },
+                    ),
+                  ),
+                ]),
+        ),
       ]),
     );
   }

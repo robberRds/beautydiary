@@ -15,6 +15,9 @@ class _VisitHistoryScreenState extends State<VisitHistoryScreen> {
   List<Appointment> filtered = [];
   String query = '';
   String? selectedClient;
+  // pagination
+  static const int _perPage = 20;
+  int _page = 0;
 
   @override
   void initState() {
@@ -32,6 +35,8 @@ class _VisitHistoryScreenState extends State<VisitHistoryScreen> {
   }
 
   void _applyFilter() {
+    // reset paging on new filter
+    _page = 0;
     if (selectedClient != null) {
       filtered = all.where((a) => a.clientName == selectedClient).toList();
     } else if (query.trim().isEmpty) {
@@ -66,7 +71,13 @@ class _VisitHistoryScreenState extends State<VisitHistoryScreen> {
     final dateDf = DateFormat.yMMMd('uk');
     final timeDf = DateFormat.Hm('uk');
 
-    final grouped = _groupByDay(filtered);
+    // Use paged data for display
+    final total = filtered.length;
+    final totalPages = (total / _perPage).ceil().clamp(1, 9999);
+    final start = (_page * _perPage).clamp(0, total);
+    final end = ((start + _perPage) > total) ? total : (start + _perPage);
+    final pageItems = filtered.sublist(start, end);
+    final grouped = _groupByDay(pageItems);
     final days = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
     final matchedClients = query.trim().isEmpty ? <String>[] : _matchingClients();
@@ -138,6 +149,25 @@ class _VisitHistoryScreenState extends State<VisitHistoryScreen> {
                 ),
               ),
             const SizedBox(height: 8),
+            // Pagination controls
+            if (filtered.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: _page > 0 ? () => setState(() => _page--) : null,
+                      icon: const Icon(Icons.arrow_back),
+                    ),
+                    Text('Сторінка ${_page + 1} з $totalPages'),
+                    IconButton(
+                      onPressed: (_page < totalPages - 1) ? () => setState(() => _page++) : null,
+                      icon: const Icon(Icons.arrow_forward),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: filtered.isEmpty
                   ? const Center(child: Text('Немає записів'))
