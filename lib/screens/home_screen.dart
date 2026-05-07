@@ -151,17 +151,25 @@ class _HomeScreenState extends State<HomeScreen> {
               markerBuilder: (context, date, eventsList) {
                 final count = _eventsForDay(date).length;
                 if (count == 0) return const SizedBox.shrink();
+                final Color bg;
+                if (count <= 2) {
+                  bg = Colors.green;
+                } else if (count <= 4) {
+                  bg = Colors.orange;
+                } else {
+                  bg = Colors.red;
+                }
                 return Align(
                   alignment: Alignment.bottomCenter,
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 4),
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
                     alignment: Alignment.center,
                     child: Text(
                       '$count',
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
                     ),
                   ),
                 );
