@@ -28,6 +28,16 @@ class NotificationService {
     final settings = InitializationSettings(android: android, iOS: ios);
     await _plugin.initialize(settings);
 
+    // On iOS/macOS request permissions explicitly (helps when plugin defaults don't trigger)
+    try {
+      if (Platform.isIOS || Platform.isMacOS) {
+        final iosImpl = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+        await iosImpl?.requestPermissions(alert: true, badge: true, sound: true);
+      }
+    } catch (e) {
+      debugPrint('iOS permission request error: $e');
+    }
+
     // Create Android notification channels (idempotent)
     try {
       if (Platform.isAndroid) {
@@ -51,11 +61,16 @@ class NotificationService {
 
     // timezone
     tzdata.initializeTimeZones();
-    // For CI/emulator build compatibility we default to UTC if no native
-    // timezone plugin is available. This avoids native plugin build issues
-    // while allowing notification scheduling to be tested.
+    // Try to set a reasonable local timezone. Prefer device timezone name
+    // if available; fall back to UTC to avoid native plugin build issues.
     try {
-      tz.setLocalLocation(tz.getLocation('UTC'));
+      final name = DateTime.now().timeZoneName;
+      try {
+        tz.setLocalLocation(tz.getLocation(name));
+      } catch (_) {
+        // fallback: try common mappings for iOS (e.g., 'GMT+3' etc.)
+        tz.setLocalLocation(tz.UTC);
+      }
     } catch (e) {
       tz.setLocalLocation(tz.UTC);
     }

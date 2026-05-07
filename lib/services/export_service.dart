@@ -12,10 +12,19 @@ class ExportService {
     final df = DateFormat('yyyy-MM-dd HH:mm');
     doc.addPage(pw.MultiPage(build: (c) {
       return [
-        pw.Header(level: 0, child: pw.Text('Appointments')),
+        pw.Header(level: 0, child: pw.Text('Записи')),
         pw.TableHelper.fromTextArray(
-          headers: ['Date', 'Client', 'Phone', 'Price', 'Note'],
-          data: items.map((a) => [df.format(a.dateTime), a.clientName, a.phone ?? '', a.price?.toStringAsFixed(2) ?? '', a.note ?? '']).toList())
+          headers: ['Дата', 'Клієнт', 'Телефон', 'Ціна', 'Опис', 'Фото'],
+          data: items
+            .map((a) => [
+                df.format(a.dateTime),
+                a.clientName,
+                a.phone ?? '',
+                a.price == null ? '' : (a.price! % 1 == 0 ? '${a.price!.toStringAsFixed(0)}₴' : '${a.price!.toStringAsFixed(2)}₴'),
+                a.note ?? '',
+                a.photoPath ?? ''
+              ])
+            .toList())
       ];
     }));
 
@@ -31,11 +40,13 @@ class ExportService {
 
   Future<String> exportAppointmentsToExcel(List<Appointment> items) async {
     final excel = Excel.createExcel();
-    final sheet = excel[excel.getDefaultSheet()!];
-    sheet.appendRow(['Date', 'Client', 'Phone', 'Price', 'Note']);
+    final sheetName = excel.getDefaultSheet()!;
+    final sheet = excel[sheetName];
+    sheet.appendRow(['Дата', 'Клієнт', 'Телефон', 'Ціна', 'Опис', 'Фото']);
     final df = DateFormat('yyyy-MM-dd HH:mm');
     for (final a in items) {
-      sheet.appendRow([df.format(a.dateTime), a.clientName, a.phone ?? '', a.price?.toStringAsFixed(2) ?? '', a.note ?? '']);
+      final priceStr = a.price == null ? '' : (a.price! % 1 == 0 ? a.price!.toStringAsFixed(0) + '₴' : a.price!.toStringAsFixed(2) + '₴');
+      sheet.appendRow([df.format(a.dateTime), a.clientName, a.phone ?? '', priceStr, a.note ?? '', a.photoPath ?? '']);
     }
     final bytes = excel.encode();
     final dir = await getApplicationDocumentsDirectory();
