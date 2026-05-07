@@ -43,6 +43,7 @@ dependencies:
   table_calendar: ^3.0.9
   intl: ^0.19.0
   image_picker: ^0.8.7
+  # permission_handler removed due to plugin compatibility; using ImagePicker exceptions instead
   pdf: ^3.10.1
   printing: ^5.11.0
   # syncfusion_flutter_charts removed; using local painters instead
@@ -77,6 +78,12 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - lib/icon/Image_m2rublm2rublm2ru.png
+
+
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:

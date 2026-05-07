@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/appointment.dart';
 import '../services/db_service.dart';
+import 'photo_viewer_screen.dart';
 
 class NewAppointmentScreen extends StatefulWidget {
   const NewAppointmentScreen({super.key});
@@ -23,8 +24,9 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
   final _priceCtl = TextEditingController();
   final _noteCtl = TextEditingController();
   String? _imagePath;
-  DateTime _dt = DateTime.now();
+  DateTime _dt = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day, 0, 0);
   int? _editingId;
+  bool _argsApplied = false;
   double minPrice = 0.0;
   int phoneDigits = 10;
 
@@ -45,18 +47,22 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final arg = ModalRoute.of(context)!.settings.arguments;
-    if (arg is DateTime) {
-      _dt = DateTime(arg.year, arg.month, arg.day, _dt.hour, _dt.minute);
-    } else if (arg is Appointment) {
-      final a = arg;
-      _editingId = a.id;
-      _nameCtl.text = a.clientName;
-      _phoneCtl.text = a.phone ?? '';
-      _priceCtl.text = a.price?.toString() ?? '';
-      _noteCtl.text = a.note ?? '';
-      _dt = a.dateTime;
-      _imagePath = a.photoPath;
+    if (!_argsApplied) {
+      final arg = ModalRoute.of(context)!.settings.arguments;
+      if (arg is DateTime) {
+        // If navigated to create a new appointment for a date, default time stays at 00:00
+        _dt = DateTime(arg.year, arg.month, arg.day, _dt.hour, _dt.minute);
+      } else if (arg is Appointment) {
+        final a = arg;
+        _editingId = a.id;
+        _nameCtl.text = a.clientName;
+        _phoneCtl.text = a.phone ?? '';
+        _priceCtl.text = a.price?.toString() ?? '';
+        _noteCtl.text = a.note ?? '';
+        _dt = a.dateTime;
+        _imagePath = a.photoPath;
+      }
+      _argsApplied = true;
     }
   }
 
@@ -79,9 +85,19 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
     );
     if (date == null) return;
     if (!mounted) return;
-    final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_dt));
-    if (time == null) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_dt),
+      initialEntryMode: TimePickerEntryMode.input,
+    );
     if (!mounted) return;
+    if (time == null) {
+      // If user selected a date but cancelled time, keep previous time and apply new date
+      setState(() {
+        _dt = DateTime(date.year, date.month, date.day, _dt.hour, _dt.minute);
+      });
+      return;
+    }
     setState(() {
       _dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
     });
@@ -112,11 +128,19 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
   Future<void> _pickImage(ImageSource src) async {
     try {
       final picker = ImagePicker();
-      final x = await picker.pickImage(source: src, maxWidth: 1600, imageQuality: 80);
-      if (x == null) return;
-      final bytes = await x.readAsBytes();
+      XFile? xfile;
+      try {
+        xfile = await picker.pickImage(source: src, maxWidth: 1600, imageQuality: 80);
+      } catch (e) {
+        debugPrint('ImagePicker exception: $e');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Не вдалося відкрити камеру/галерею')));
+        return;
+      }
+      if (xfile == null) return;
+      final bytes = await xfile.readAsBytes();
       final dir = await getApplicationDocumentsDirectory();
-      final filename = 'appointment_${DateTime.now().millisecondsSinceEpoch}${extension(x.path)}';
+      final filename = 'appointment_${DateTime.now().millisecondsSinceEpoch}${extension(xfile.path)}';
       final out = File('${dir.path}/$filename');
       await out.writeAsBytes(bytes);
       setState(() {
@@ -124,6 +148,8 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
       });
     } catch (e) {
       debugPrint('Image pick error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Сталася помилка при виборі фото')));
     }
   }
 
@@ -170,8 +196,16 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
               ),
               const SizedBox(height: 8),
               Row(children: [
-                Expanded(child: Text('Час: ${DateFormat.yMMMd().add_Hm().format(_dt)}')),
-                TextButton(onPressed: _pickDateTime, child: const Text('Змінити'))
+                Expanded(
+                    child: InkWell(
+                  onTap: _pickDateTime,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(DateFormat.yMMMd('uk').format(_dt), style: const TextStyle(decoration: TextDecoration.underline, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 2),
+                    Text(DateFormat.Hm().format(_dt), style: const TextStyle(decoration: TextDecoration.underline, fontWeight: FontWeight.w600)),
+                  ]),
+                )),
+                ElevatedButton.icon(onPressed: _pickDateTime, icon: const Icon(Icons.access_time), label: const Text('Змінити'))
               ]),
               TextFormField(
                 controller: _phoneCtl,
@@ -202,11 +236,16 @@ class _NewAppointmentScreenState extends State<NewAppointmentScreen> {
                 decoration: const InputDecoration(labelText: 'Опис (необовʼязково)'),
               ),
               const SizedBox(height: 8),
-              if (_imagePath != null) Center(child: Image.file(File(_imagePath!), width: 160, height: 160, fit: BoxFit.cover)),
+              if (_imagePath != null)
+                Center(
+                    child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => PhotoViewerScreen(path: _imagePath!)));
+                  },
+                  child: Image.file(File(_imagePath!), width: 160, height: 160, fit: BoxFit.cover),
+                )),
               Row(children: [
                 ElevatedButton.icon(onPressed: () => _pickImage(ImageSource.gallery), icon: const Icon(Icons.photo_library), label: const Text('З галереї')),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(onPressed: () => _pickImage(ImageSource.camera), icon: const Icon(Icons.camera_alt), label: const Text('Зробити фото')),
                 const SizedBox(width: 8),
                 if (_imagePath != null) TextButton(onPressed: () => setState(() => _imagePath = null), child: const Text('Видалити'))
               ]),

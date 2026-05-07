@@ -16,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   DateTime _focused = DateTime.now();
   DateTime _selected = DateTime.now();
+  CalendarFormat _calFormat = CalendarFormat.month;
   Map<DateTime, List<Appointment>> events = {};
 
   @override
@@ -122,6 +123,16 @@ class _HomeScreenState extends State<HomeScreen> {
             locale: 'uk',
             firstDay: DateTime.utc(2000, 1, 1),
             lastDay: DateTime.utc(2100, 12, 31),
+            calendarFormat: _calFormat,
+            onFormatChanged: (f) {
+              setState(() {
+                _calFormat = f;
+              });
+            },
+            availableCalendarFormats: const {
+              CalendarFormat.month: 'Місяць',
+              CalendarFormat.week: 'Тиждень',
+            },
             focusedDay: _focused,
             selectedDayPredicate: (d) => isSameDay(d, _selected),
             onDaySelected: (selected, focused) async {

@@ -77,7 +77,7 @@ class _VisitHistoryScreenState extends State<VisitHistoryScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Історія відвідувань')),
+      appBar: AppBar(title: const Text('Записи клієнтів')),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(

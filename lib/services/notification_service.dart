@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -26,6 +27,27 @@ class NotificationService {
     );
     final settings = InitializationSettings(android: android, iOS: ios);
     await _plugin.initialize(settings);
+
+    // Create Android notification channels (idempotent)
+    try {
+      if (Platform.isAndroid) {
+        final androidImpl = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        await androidImpl?.createNotificationChannel(const AndroidNotificationChannel(
+          'bd_morning',
+          'Morning reminders',
+          description: 'Daily morning reminder',
+          importance: Importance.defaultImportance,
+        ));
+        await androidImpl?.createNotificationChannel(const AndroidNotificationChannel(
+          'bd_pre',
+          'Pre-event reminders',
+          description: 'Reminders before appointment',
+          importance: Importance.high,
+        ));
+      }
+    } catch (e) {
+      debugPrint('Failed to create notification channels: $e');
+    }
 
     // timezone
     tzdata.initializeTimeZones();

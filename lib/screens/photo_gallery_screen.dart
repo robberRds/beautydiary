@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/db_service.dart';
 import '../models/appointment.dart';
+import 'photo_viewer_screen.dart';
 
 class PhotoGalleryScreen extends StatefulWidget {
   const PhotoGalleryScreen({super.key});
@@ -62,7 +63,13 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                       clipBehavior: Clip.hardEdge,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       child: Column(children: [
-                        Expanded(child: a.photoPath != null ? Image.file(File(a.photoPath!), fit: BoxFit.cover, width: double.infinity) : const SizedBox.shrink()),
+                        Expanded(
+                            child: a.photoPath != null
+                                ? InkWell(
+                                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PhotoViewerScreen(path: a.photoPath!))),
+                                    child: Image.file(File(a.photoPath!), fit: BoxFit.cover, width: double.infinity),
+                                  )
+                                : const SizedBox.shrink()),
                         Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
