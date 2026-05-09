@@ -68,7 +68,6 @@ class NotificationService {
       try {
         tz.setLocalLocation(tz.getLocation(name));
       } catch (_) {
-        // fallback: try common mappings for iOS (e.g., 'GMT+3' etc.)
         tz.setLocalLocation(tz.UTC);
       }
     } catch (e) {
@@ -105,9 +104,10 @@ class NotificationService {
 
   Future<void> _scheduleMorningReminder({required int hour, required int minute}) async {
     final now = tz.TZDateTime.now(tz.local);
-    final scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
     if (scheduled.isBefore(now)) {
-      // skip scheduling for past time today
+      // schedule for next day if time already passed
+      scheduled = scheduled.add(const Duration(days: 1));
     }
 
     // prepare payload with first appointment info
